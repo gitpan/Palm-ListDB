@@ -11,9 +11,10 @@ INSTALLATION
 
   Palm::ListDB can be installed easily by using the CPAN module.
 
-	perl -MCPAN -e"install Palm::ListDB"
+	perl -MCPAN -e "install Palm::ListDB"
 
-  or manually by untarring the archive and running the following commands.
+  or manually by untarring the archive and running the following
+  commands:
 
 	perl Makefile.PL
 	make
@@ -34,24 +35,29 @@ REQUIREMENTS
 
 DOCUMENTATION
 
-  For documentation about this package, read POD documentation of the module
+  For documentation about this package, read the POD documentation
+  of the module
 
 	perldoc Palm::ListDB
 
-  or check the manpage.
+  or check the manpage that will be installed.
 
 
 COPYRIGHT
 
-  Copyright (c) 2002 Rüdiger Peusquens. All rights 
+  Copyright (c) 2002 Rüdiger Peusquens. All rights reserved.
   This module is free software; you can redistribute it
-  and/or modify it under the same terms as Perl itself.
+  and/or modify it under the terms of the Artistic License.
+  See the file COPYING for details.
 
 
 AUTHOR
 
-  This module was written by Ruediger Peusquens <rudy@peusquens.net>
+  This module was written by Rüdiger Peusquens <rudy@peusquens.net>
 
+  ListDB is written by Andrew Low <roo@magma.ca>.
+
+  Palm::PDB is written by Andrew Arensburger <arensb@ooblick.com>.
 
 SEE ALSO
 

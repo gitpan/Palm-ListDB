@@ -5,12 +5,12 @@
 # DESCRIPTION	Sub class of Palm::PDB
 #               specialized for listDB by Andrew Low
 #
-# COPYRIGHT (c)	2002 by Ruediger Peusquens
+# COPYRIGHT (c)	2002 by Rudiger Peusquens
 #		All rights reserved.
 #               This program is free software; you can redistribute it
 #	        and/or modify it under the same terms as Perl itself.
 #
-# AUTHOR	Ruediger Peusquens <rudy@peusquens.net>
+# AUTHOR	Rudiger Peusquens <rudy@peusquens.net>
 #
 # HISTORY
 # $Log$
@@ -20,11 +20,13 @@ use strict;
 package Palm::ListDB;
 
 use Palm::StdAppInfo();
+use Palm::Raw();
+use Carp qw(carp);
 
 use vars qw( $VERSION @ISA );
 
-@ISA = qw( Palm::StdAppInfo );
-$VERSION = '0.23';
+@ISA = qw( Palm::StdAppInfo Palm::Raw );
+$VERSION = '0.24';
 
 sub import {
     &Palm::PDB::RegisterPDBHandlers( __PACKAGE__,
@@ -38,8 +40,10 @@ sub new {
 			# Create a generic PDB. No need to rebless it,
 			# though.
 
+	$self->{name} = 'ListDB';	# give it a default name
 	$self->{creator} = 'LSdb';
 	$self->{type} = 'DATA';
+	$self->{attributes}{resource} = 0;
 
 	# Initialize the AppInfo block
 	$self->{appinfo} = {
@@ -80,7 +84,6 @@ sub ParseAppInfoBlock {
     $appinfo->{field1} = $field1;
     $appinfo->{field2} = $field2;
 
-
     return $appinfo;
 }
 
@@ -105,8 +108,8 @@ sub PackAppInfoBlock {
     }
 
     # Pack the non-category part of the AppInfo block
-    # Don't know what first 2 bytes are for
-    $self->{appinfo}{other} = pack 'C2a16a16',
+    # We need to pad the last 202 bytes.
+    $self->{appinfo}{other} = pack 'C2a16a16x202',
                                    @data{qw(writeProtect lastCategory
 					    field1 field2)};
 
@@ -114,17 +117,6 @@ sub PackAppInfoBlock {
     return &Palm::StdAppInfo::pack_StdAppInfo($self->{appinfo});
 }
 
-
-sub new_Record {
-	my $classname = shift;
-	my $retval = $classname->SUPER::new_Record(@_);
-
-	$retval->{field1} = undef;
-	$retval->{field2} = undef;
-	$retval->{note}   = undef;
-
-	return $retval;
-}
 
 sub ParseRecord {
     my ($self, %record) = @_;
@@ -177,6 +169,52 @@ sub PackRecord {
     return $data ;
 }
 
+sub new_Record {
+    my ($self, %args) = @_;
+    my $record = $self->SUPER::new_Record();
+
+    # maybe set category
+    if ( defined( my $category = $args{category} ) ) {
+	my $catIndex = undef;
+
+	if ( $category eq '' ) {
+	    # empty string silently mapped to Unfiled
+	    $catIndex = 0;
+	} elsif ( $category =~ /\D/ ) {
+	    # category by name
+	    foreach my $i ( 0 .. Palm::StdAppInfo::numCategories - 1 ) {
+		my $cat = $self->{appinfo}{categories}[$i];
+		if ( defined $cat->{name} and $cat->{name} eq $category ) {
+		    $catIndex = $i;
+		    last;
+		}
+	    }
+	} elsif ( $category >= 0
+		  and $category < Palm::StdAppInfo::numCategories ) {
+	    # category by index
+	    $catIndex = $category;
+	}
+
+	# fall back to "Unfiled"
+	unless ( defined $catIndex ) {
+	    carp "Bad category `$category'. Using `Unfiled' (0)";
+	    $catIndex = 0;
+	}
+	$record->{category} = $catIndex;
+    }
+
+    # set field1, field2 and note
+    foreach my $field (qw(field1 field2 note)) {
+	if ( defined $args{$field} ) {
+	    $record->{$field} = $args{$field};
+	} else {
+	    $record->{$field} = undef;
+	}
+    }
+
+    return $record;
+}
+
 1;	# module must return success
 
 __END__
@@ -210,14 +248,14 @@ Other fields include:
 
 This is a scalar, the ID of the last category assigned. Note that this
 is B<not> the index in the array of categories stored in
-$pdb->{appinfo}{categories}!
+$pdb-E<gt>{appinfo}{categories}!
 
     $pdb->{appinfo}{lastCategory}
 
 This is a scalar, the index of the selected category.
-Category B<Unfiled> should always be zero. Category B<All> is 255.
+Category B<Unfiled> should always be zero. Category B<All> is 0xff.
 Note that this field B<does> refer to the index in the array
-of categories stored in $pdb->{appinfo}{categories}.
+of categories stored in $pdb-E<gt>{appinfo}{categories}.
 
     $pdb->{appinfo}{writeProtect}
 
@@ -253,7 +291,7 @@ record have will either not exists or contain the empty string.
 
 This is a scalar that contains the index of the category this record
 belongs to. This field refers to the index in the array of categories
-stored in $pdb->{appinfo}{categories}.
+stored in $pdb-E<gt>{appinfo}{categories}.
 
 =head1 METHODS
 
@@ -268,20 +306,26 @@ Use this method if you want to create a ListDB PDB from scratch.
 
 =head2 new_Record
 
-    $record = $pdb->new_Record();
+    $record = $pdb->new_ Record( category => '$cat,
+				 field1   => 'field1',
+				 field1   => 'field1',
+				 note     => 'note' );
 
-Creates a new ListDB record, with blank values for the fields.
-It will be inititalized to the B<Unfiled> category.
+Creates and appends a new record to $pdb. All arguments are optional.
+The value to I<category> can either be an index from the
+C<$pdb-E<gt>{appinfo}{categories}> array or an existing category's name.
+Empty category strings will silently be mapped the the Unfiled category.
 
 C<new_Record> does B<not> add the new record to $pdb. For that,
-you want C<$pdb-append_Record>.
-
+you want C<$pdb-E<gt>append_Record>.
 
 =head1 AUTHOR
 
-Ruediger Peuquens E<lt>rudy@peusquens.netE<gt>
+Rudiger Peusquens E<lt>rudy@peusquens.netE<gt>
 
-ListDB is written by by Andrew Low E<lt>roo@magma.caE<gt>.
+Palm::PDB is written by Andrew Arensburger E<lt>arensb@ooblick.comE<gt>
+
+ListDB is written by Andrew Low E<lt>roo@magma.caE<gt>.
 You can get a copy at http://www.magma.ca/~roo.
 
 =head1 SEE ALSO

@@ -1,0 +1,11 @@
+Revision history for Perl extension Palm::PalmDoc.
+
+0.24  Thu Aug 22 18:50:06 2002 
+	- fixed padding of AppInfoBlock
+	- added options to new_Record
+	- fixed typos in pod and README
+	- added artistic license
+	- started Changelog
+
+0.23  Thu Aug 22 7:34:19 2002 
+	- first upload to CPAN

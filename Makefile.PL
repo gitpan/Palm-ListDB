@@ -6,6 +6,7 @@ WriteMakefile(
   'NAME'         => 'Palm::ListDB',
   'VERSION_FROM' => 'ListDB.pm',
   'PREREQ_PM'    => { Palm::PDB => '1.019',
+                      Palm::Raw => '1.008',
                       Palm::StdAppInfo => '1.011' },
   'INSTALLDIRS'  => 'site'
 );
