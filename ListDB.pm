@@ -26,7 +26,7 @@ use Carp qw(carp);
 use vars qw( $VERSION @ISA );
 
 @ISA = qw( Palm::StdAppInfo Palm::Raw );
-$VERSION = '0.24';
+$VERSION = '0.25';
 
 sub import {
     &Palm::PDB::RegisterPDBHandlers( __PACKAGE__,
@@ -175,6 +175,7 @@ sub new_Record {
 
     # maybe set category
     if ( defined( my $category = $args{category} ) ) {
+	my @categories = @{ $self->{appinfo}{categories} };
 	my $catIndex = undef;
 
 	if ( $category eq '' ) {
@@ -182,15 +183,14 @@ sub new_Record {
 	    $catIndex = 0;
 	} elsif ( $category =~ /\D/ ) {
 	    # category by name
-	    foreach my $i ( 0 .. Palm::StdAppInfo::numCategories - 1 ) {
-		my $cat = $self->{appinfo}{categories}[$i];
+	    foreach my $i ( 0 .. $#categories ) {
+		my $cat = $categories[$i];
 		if ( defined $cat->{name} and $cat->{name} eq $category ) {
 		    $catIndex = $i;
 		    last;
 		}
 	    }
-	} elsif ( $category >= 0
-		  and $category < Palm::StdAppInfo::numCategories ) {
+	} elsif ( $category >= 0 and $category <= $#categories ) {
 	    # category by index
 	    $catIndex = $category;
 	}
@@ -306,7 +306,7 @@ Use this method if you want to create a ListDB PDB from scratch.
 
 =head2 new_Record
 
-    $record = $pdb->new_ Record( category => '$cat,
+    $record = $pdb->new_ Record( category => $cat,
 				 field1   => 'field1',
 				 field1   => 'field1',
 				 note     => 'note' );
